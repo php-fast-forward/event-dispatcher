@@ -81,46 +81,9 @@ final class EventDispatcherServiceProvider implements ServiceProviderInterface
     public function getExtensions(): array
     {
         return [
-            ListenerProviderAggregate::class => static function (
-                ContainerInterface $container,
-                ListenerProviderAggregate $listenerProviderAggregate,
-            ): void {
-                $listenerProviderAggregate->attach($container->get(PrioritizedListenerProvider::class));
-                $listenerProviderAggregate->attach($container->get(ReflectionBasedListenerProvider::class));
-                $listenerProviderAggregate->attach($container->get(EventSubscriberListenerProvider::class));
-            },
-            PrioritizedListenerProvider::class => function (
-                ContainerInterface $container,
-                PrioritizedListenerProvider $prioritizedListenerProvider,
-            ): void {
-                foreach ($this->listeners[PrioritizedListenerProvider::class] as $listener) {
-                    $attributes = $this->getReflectionAttributes($listener);
-
-                    foreach ($attributes as $attribute) {
-                        $priority  = $attribute->priority;
-                        $eventType = $attribute->event;
-                        $method    = $attribute->method;
-
-                        if (\is_string($listener) && $container->has($listener)) {
-                            $listener = new LazyListener($container, $listener, $method);
-                        }
-
-                        $prioritizedListenerProvider->listen($eventType, $listener, $priority);
-                    }
-                }
-            },
-            ReflectionBasedListenerProvider::class => function (
-                ContainerInterface $container,
-                ReflectionBasedListenerProvider $reflectionBasedListenerProvider,
-            ): void {
-                foreach ($this->listeners[ReflectionBasedListenerProvider::class] as $listener) {
-                    if ($container->has($listener)) {
-                        $listener = new LazyListener($container, $listener);
-                    }
-
-                    $reflectionBasedListenerProvider->listen($listener);
-                }
-            },
+            ListenerProviderAggregate::class => [$this, 'extendListenerProviderAggregate'],
+            PrioritizedListenerProvider::class => [$this, 'extendPrioritizedListenerProvider'],
+            ReflectionBasedListenerProvider::class => [$this, 'extendReflectionBasedListenerProvider'],
         ];
     }
 
@@ -204,5 +167,48 @@ final class EventDispatcherServiceProvider implements ServiceProviderInterface
         }
 
         return $listenerProviderType;
+    }
+
+    private function extendListenerProviderAggregate(
+        ContainerInterface $container,
+        ListenerProviderAggregate $listenerProviderAggregate,
+    ): void {
+        $listenerProviderAggregate->attach($container->get(PrioritizedListenerProvider::class));
+        $listenerProviderAggregate->attach($container->get(ReflectionBasedListenerProvider::class));
+        $listenerProviderAggregate->attach($container->get(EventSubscriberListenerProvider::class));
+    }
+
+    private function extendPrioritizedListenerProvider(
+        ContainerInterface $container,
+        PrioritizedListenerProvider $prioritizedListenerProvider,
+    ): void {
+        foreach ($this->listeners[PrioritizedListenerProvider::class] as $listener) {
+            $attributes = $this->getReflectionAttributes($listener);
+
+            foreach ($attributes as $attribute) {
+                $priority  = $attribute->priority;
+                $eventType = $attribute->event;
+                $method    = $attribute->method;
+
+                if (\is_string($listener) && $container->has($listener)) {
+                    $listener = new LazyListener($container, $listener, $method);
+                }
+
+                $prioritizedListenerProvider->listen($eventType, $listener, $priority);
+            }
+        }
+    }
+
+    private function extendReflectionBasedListenerProvider(
+        ContainerInterface $container,
+        ReflectionBasedListenerProvider $reflectionBasedListenerProvider,
+    ): void {
+        foreach ($this->listeners[ReflectionBasedListenerProvider::class] as $listener) {
+            if ($container->has($listener)) {
+                $listener = new LazyListener($container, $listener);
+            }
+
+            $reflectionBasedListenerProvider->listen($listener);
+        }
     }
 }
