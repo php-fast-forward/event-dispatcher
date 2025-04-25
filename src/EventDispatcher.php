@@ -49,8 +49,8 @@ final class EventDispatcher implements EventDispatcherInterface
         foreach ($listeners as $listener) {
             try {
                 $listener($event);
-            } catch (Throwable $e) {
-                $this->handleCaughtThrowable($e, $event, $listener);
+            } catch (\Throwable $throwable) {
+                $this->handleCaughtThrowable($throwable, $event, $listener);
             }
 
             if ($stoppable && $event->isPropagationStopped()) {
@@ -61,21 +61,16 @@ final class EventDispatcher implements EventDispatcherInterface
         return $event;
     }
 
-    /**
-     * @throws Throwable Throws the originally caught throwable ($e), or, in
-     *     the event that $event is an ErrorEvent, the value of its
-     *     getThrowable() method.
-     */
-    private function handleCaughtThrowable(Throwable $e, object $event, callable $listener): void
+    private function handleCaughtThrowable(\Throwable $throwable, object $event, callable $listener): void
     {
         if ($event instanceof ErrorEvent) {
             // Re-throw the original exception, per the spec.
             throw $event->getThrowable();
         }
 
-        $this->dispatch(new ErrorEvent($event, $listener, $e));
+        $this->dispatch(new ErrorEvent($event, $listener, $throwable));
 
         // Re-throw the original exception, per the spec.
-        throw $e;
+        throw $throwable;
     }
 }
