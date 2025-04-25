@@ -33,18 +33,15 @@ final class EventSubscriberListenerProvider implements ListenerProviderInterface
 
     public function getListenersForEvent(object $event): iterable
     {
-        if (!$event instanceof NamedEvent) {
-            return [];
-        }
+        $eventName = $event instanceof NamedEvent ? $event->getName() : get_class($event);
 
-        $eventName = $event->getName();
         if (!isset($this->subscribedEvents[$eventName])) {
             return [];
         }
 
         foreach ($this->subscribedEvents[$eventName] as [$eventSubscriber, $method]) {
             yield static function (object $event) use ($eventSubscriber, $method): void {
-                $eventSubscriber->{$method}($event->getEvent());
+                $eventSubscriber->{$method}($event instanceof NamedEvent ? $event->getEvent() : $event);
             };
         }
     }
@@ -88,10 +85,7 @@ final class EventSubscriberListenerProvider implements ListenerProviderInterface
         string $method,
         int $priority = 0,
     ): void {
-        if (!\array_key_exists($eventName, $this->subscribedEvents)) {
-            $this->subscribedEvents[$eventName] = new \SplPriorityQueue();
-        }
-
+        $this->subscribedEvents[$eventName] ??= new \SplPriorityQueue();
         $this->subscribedEvents[$eventName]->insert([$eventSubscriber, $method], $priority);
     }
 }

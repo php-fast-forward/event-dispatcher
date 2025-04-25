@@ -16,6 +16,9 @@ declare(strict_types=1);
 namespace FastForward\EventDispatcher;
 
 use FastForward\EventDispatcher\Event\NamedEvent;
+use FastForward\Iterator\ChainIterableIterator;
+use FastForward\Iterator\ClosureFactoryIteratorAggregate;
+use FastForward\Iterator\UniqueIteratorIterator;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 final class EventDispatcher implements EventDispatcherInterface
@@ -32,11 +35,12 @@ final class EventDispatcher implements EventDispatcherInterface
             return $event;
         }
 
-        $namedEvent = $eventName ? new NamedEvent($eventName, $event) : $event;
-
-        $listeners = new \AppendIterator();
-        $listeners->append($this->listenerProvider->getListenersForEvent($event));
-        $listeners->append($this->listenerProvider->getListenersForEvent($namedEvent));
+        $listeners = new UniqueIteratorIterator(
+            new ChainIterableIterator(
+                $this->listenerProvider->getListenersForEvent($event),
+                $this->listenerProvider->getListenersForEvent(new NamedEvent($eventName, $event))
+            )
+        );
 
         foreach ($listeners as $listener) {
             $listener($event);
