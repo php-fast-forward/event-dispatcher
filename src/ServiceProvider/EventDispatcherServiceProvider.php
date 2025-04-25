@@ -81,8 +81,8 @@ final class EventDispatcherServiceProvider implements ServiceProviderInterface
     public function getExtensions(): array
     {
         return [
-            ListenerProviderAggregate::class => [$this, 'extendListenerProviderAggregate'],
-            PrioritizedListenerProvider::class => [$this, 'extendPrioritizedListenerProvider'],
+            ListenerProviderAggregate::class       => [$this, 'extendListenerProviderAggregate'],
+            PrioritizedListenerProvider::class     => [$this, 'extendPrioritizedListenerProvider'],
             ReflectionBasedListenerProvider::class => [$this, 'extendReflectionBasedListenerProvider'],
         ];
     }
