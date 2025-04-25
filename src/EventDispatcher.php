@@ -18,6 +18,7 @@ namespace FastForward\EventDispatcher;
 use FastForward\EventDispatcher\Event\NamedEvent;
 use FastForward\Iterator\ChainIterableIterator;
 use FastForward\Iterator\UniqueIteratorIterator;
+use Psr\EventDispatcher\StoppableEventInterface;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
 final class EventDispatcher implements EventDispatcherInterface
