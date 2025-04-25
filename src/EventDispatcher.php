@@ -35,6 +35,8 @@ final class EventDispatcher implements EventDispatcherInterface
             return $event;
         }
 
+        $eventName ??= get_class($event);
+
         $listeners = new UniqueIteratorIterator(
             new ChainIterableIterator(
                 $this->listenerProvider->getListenersForEvent($event),
