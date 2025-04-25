@@ -42,21 +42,10 @@ final class EventDispatcherServiceProvider implements ServiceProviderInterface
         callable|EventSubscriberInterface|ListenerProviderInterface|string ...$listeners
     ) {
         foreach ($listeners as $listener) {
-            $hasAttribute = $this->getReflectionAttributes($listener)->getIterator()->current();
+            $listenerProviderType = $this->getListenerProviderType($listener);
 
-            $collection = match (true) {
-                $hasAttribute                                               => PrioritizedListenerProvider::class,
-                is_subclass_of($listener, ListenerProviderInterface::class) => ListenerProviderAggregate::class,
-                is_subclass_of($listener, EventSubscriberInterface::class)  => EventSubscriberListenerProvider::class,
-                default                                                     => ReflectionBasedListenerProvider::class,
-            };
-
-            if (ReflectionBasedListenerProvider::class === $collection && !\is_string($listener) && !\is_callable($listener)) {
-                throw RuntimeException::forInvalidListenerType($listener);
-            }
-
-            $this->listeners[$collection] ??= [];
-            $this->listeners[$collection][] = $listener;
+            $this->listeners[$listenerProviderType] ??= [];
+            $this->listeners[$listenerProviderType][] = $listener;
         }
     }
 
@@ -193,5 +182,27 @@ final class EventDispatcherServiceProvider implements ServiceProviderInterface
     private function getAlias(string $alias): callable
     {
         return static fn (ContainerInterface $container) => $container->get($alias);
+    }
+
+    private function getListenerProviderType(
+        callable|EventSubscriberInterface|ListenerProviderInterface|string $listener
+    ): string {
+        $hasAttribute = $this->getReflectionAttributes($listener)->getIterator()->current();
+
+        $listenerProviderType = match (true) {
+            $hasAttribute                                               => PrioritizedListenerProvider::class,
+            is_subclass_of($listener, ListenerProviderInterface::class) => ListenerProviderAggregate::class,
+            is_subclass_of($listener, EventSubscriberInterface::class)  => EventSubscriberListenerProvider::class,
+            default                                                     => ReflectionBasedListenerProvider::class,
+        };
+
+        if (ReflectionBasedListenerProvider::class === $listenerProviderType
+            && !\is_string($listener)
+            && !\is_callable($listener)
+        ) {
+            throw RuntimeException::forInvalidListenerType($listener);
+        }
+
+        return $listenerProviderType;
     }
 }

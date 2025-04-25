@@ -33,7 +33,7 @@ final class EventSubscriberListenerProvider implements ListenerProviderInterface
 
     public function getListenersForEvent(object $event): iterable
     {
-        $eventName = $event instanceof NamedEvent ? $event->getName() : get_class($event);
+        $eventName = $event instanceof NamedEvent ? $event->getName() : \get_class($event);
 
         if (!isset($this->subscribedEvents[$eventName])) {
             return [];
