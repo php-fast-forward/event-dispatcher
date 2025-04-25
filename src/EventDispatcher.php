@@ -18,6 +18,8 @@ namespace FastForward\EventDispatcher;
 use FastForward\EventDispatcher\Event\NamedEvent;
 use FastForward\Iterator\ChainIterableIterator;
 use FastForward\Iterator\UniqueIteratorIterator;
+use Phly\EventDispatcher\ErrorEvent;
+use Psr\EventDispatcher\ListenerProviderInterface;
 use Psr\EventDispatcher\StoppableEventInterface;
 use Symfony\Contracts\EventDispatcher\EventDispatcherInterface;
 
@@ -45,7 +47,11 @@ final class EventDispatcher implements EventDispatcherInterface
         );
 
         foreach ($listeners as $listener) {
-            $listener($event);
+            try {
+                $listener($event);
+            } catch (Throwable $e) {
+                $this->handleCaughtThrowable($e, $event, $listener);
+            }
 
             if ($stoppable && $event->isPropagationStopped()) {
                 break;
@@ -53,5 +59,23 @@ final class EventDispatcher implements EventDispatcherInterface
         }
 
         return $event;
+    }
+
+    /**
+     * @throws Throwable Throws the originally caught throwable ($e), or, in
+     *     the event that $event is an ErrorEvent, the value of its
+     *     getThrowable() method.
+     */
+    private function handleCaughtThrowable(Throwable $e, object $event, callable $listener): void
+    {
+        if ($event instanceof ErrorEvent) {
+            // Re-throw the original exception, per the spec.
+            throw $event->getThrowable();
+        }
+
+        $this->dispatch(new ErrorEvent($event, $listener, $e));
+
+        // Re-throw the original exception, per the spec.
+        throw $e;
     }
 }
