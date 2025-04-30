@@ -163,7 +163,7 @@ final class EventDispatcherServiceProvider implements ServiceProviderInterface
             && !\is_string($listener)
             && !\is_callable($listener)
         ) {
-            throw RuntimeException::forInvalidListenerType($listener);
+            throw RuntimeException::forUnsupportedType($listener);
         }
 
         return $listenerProviderType;

@@ -15,10 +15,31 @@ declare(strict_types=1);
 
 namespace FastForward\EventDispatcher\Exception;
 
+/**
+ * Class RuntimeException.
+ *
+ * Exception type specific to event dispatcher runtime errors.
+ * This exception MUST be used when encountering illegal states or
+ * unsupported input during runtime execution within the event dispatcher logic.
+ */
 final class RuntimeException extends \RuntimeException
 {
-    public static function forInvalidListenerType($listener): self
+    /**
+     * Generates an exception indicating an unsupported listener type.
+     *
+     * This method SHALL be used when a listener is provided in a format
+     * that is not callable or otherwise not supported by the dispatcher.
+     *
+     * @param mixed $listener The listener instance that caused the error.
+     *                        This MAY be of any type, and will be introspected.
+     *
+     * @return self an instance of RuntimeException with a descriptive message
+     */
+    public static function forUnsupportedType(mixed $listener): self
     {
-        return new self(\sprintf('Invalid listener type "%s".', \gettype($listener)));
+        return new self(\sprintf(
+            'Unsupported listener type: "%s".',
+            get_debug_type($listener)
+        ));
     }
 }
