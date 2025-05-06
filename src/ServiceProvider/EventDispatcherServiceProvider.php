@@ -15,6 +15,8 @@ declare(strict_types=1);
 
 namespace FastForward\EventDispatcher\ServiceProvider;
 
+use FastForward\Container\Factory\AliasFactory;
+use FastForward\Container\Factory\InvokableFactory;
 use FastForward\EventDispatcher\Container\EventDispatcherContainer;
 use FastForward\EventDispatcher\EventDispatcher;
 use FastForward\EventDispatcher\Exception\RuntimeException;
@@ -38,7 +40,6 @@ final class EventDispatcherServiceProvider implements ServiceProviderInterface
     private array $listeners = [];
 
     public function __construct(
-        private readonly EventDispatcherContainer $container,
         callable|EventSubscriberInterface|ListenerProviderInterface|string ...$listeners
     ) {
         foreach ($listeners as $listener) {
@@ -51,27 +52,23 @@ final class EventDispatcherServiceProvider implements ServiceProviderInterface
 
     public function getFactories(): array
     {
-        $eventDispatcherAlias = $this->getAlias(EventDispatcher::class);
-
         return [
-            EventDispatcherContainer::class => $this->container,
+            EventDispatcherInterface::class                 => AliasFactory::get(EventDispatcher::class),
+            SymfonyContractsEventDispatcherInterface::class => AliasFactory::get(EventDispatcher::class),
+            SymfonyComponentEventDispatcherInterface::class => AliasFactory::get(EventDispatcher::class),
+            ListenerProviderInterface::class                => AliasFactory::get(ListenerProviderAggregate::class),
 
-            EventDispatcherInterface::class                 => $eventDispatcherAlias,
-            SymfonyContractsEventDispatcherInterface::class => $eventDispatcherAlias,
-            SymfonyComponentEventDispatcherInterface::class => $eventDispatcherAlias,
-            ListenerProviderInterface::class                => $this->getAlias(ListenerProviderAggregate::class),
-
-            EventDispatcher::class => $this->getFactory(
+            EventDispatcher::class => new InvokableFactory(
                 EventDispatcher::class,
                 ListenerProviderInterface::class
             ),
-            ListenerProviderAggregate::class => $this->getFactory(
+            ListenerProviderAggregate::class => new InvokableFactory(
                 ListenerProviderAggregate::class,
                 ...$this->listeners[ListenerProviderAggregate::class],
             ),
-            PrioritizedListenerProvider::class     => $this->getFactory(PrioritizedListenerProvider::class),
-            ReflectionBasedListenerProvider::class => $this->getFactory(ReflectionBasedListenerProvider::class),
-            EventSubscriberListenerProvider::class => $this->getFactory(
+            PrioritizedListenerProvider::class     => new InvokableFactory(PrioritizedListenerProvider::class),
+            ReflectionBasedListenerProvider::class => new InvokableFactory(ReflectionBasedListenerProvider::class),
+            EventSubscriberListenerProvider::class => new InvokableFactory(
                 EventSubscriberListenerProvider::class,
                 ...$this->listeners[EventSubscriberListenerProvider::class],
             ),
@@ -130,21 +127,6 @@ final class EventDispatcherServiceProvider implements ServiceProviderInterface
         }
 
         return $parameter->getType()->getName();
-    }
-
-    private function getFactory(string $class, string ...$dependecies): callable
-    {
-        return static fn (ContainerInterface $container) => new $class(
-            ...array_map(
-                static fn ($dependency) => \is_string($dependency) ? $container->get($dependency) : $dependency,
-                $dependecies,
-            ),
-        );
-    }
-
-    private function getAlias(string $alias): callable
-    {
-        return static fn (ContainerInterface $container) => $container->get($alias);
     }
 
     private function getListenerProviderType(
