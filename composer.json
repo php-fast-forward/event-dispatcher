@@ -1,6 +1,6 @@
 {
     "name": "fast-forward/event-dispatcher",
-    "description": "Fast-Forward PSR-14  Event Dispatcher is a simple and fast event dispatcher for PHP. It is designed to be lightweight and easy to use, while still providing all the features you need to build powerful applications.\",",
+    "description": "Fast-Forward PSR-14  Event Dispatcher is a simple and fast event dispatcher for PHP.",
     "license": "MIT",
     "type": "library",
     "keywords": [
