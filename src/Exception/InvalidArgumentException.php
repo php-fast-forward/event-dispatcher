@@ -8,34 +8,61 @@ declare(strict_types=1);
  * This source file is subject to the license bundled
  * with this source code in the file LICENSE.
  *
- * @link      https://github.com/php-fast-forward/event-dispatcher
- * @copyright Copyright (c) 2025 Felipe Sayão Lobato Abreu <github@mentordosnerds.com>
+ * @copyright Copyright (c) 2025-2026 Felipe Sayão Lobato Abreu <github@mentordosnerds.com>
  * @license   https://opensource.org/licenses/MIT MIT License
+ *
+ * @see       https://github.com/php-fast-forward/event-dispatcher
+ * @see       https://github.com/php-fast-forward
+ * @see       https://datatracker.ietf.org/doc/html/rfc2119
  */
 
 namespace FastForward\EventDispatcher\Exception;
 
+use Throwable;
+
 /**
- * Class InvalidArgumentException.
- *
- * Specialized exception for invalid arguments within the event dispatcher context.
- * This exception type MUST be thrown when the method receives an argument
- * that violates its expected input structure or type constraints.
+ * Represent invalid arguments detected by the event dispatcher package.
  */
 final class InvalidArgumentException extends \InvalidArgumentException
 {
     /**
-     * Generates an exception indicating that an array was expected to be a list.
+     * Prevent direct instantiation outside the named factories.
      *
-     * This method SHALL be used when an array argument is required to be a list
-     * (i.e., sequential integers starting from zero), but a different structure is detected (e.g., associative array).
+     * @param string $message exception message
+     * @param int $code exception code
+     * @param Throwable|null $previous previous exception
+     */
+    private function __construct(string $message = '', int $code = 0, ?Throwable $previous = null)
+    {
+        parent::__construct($message, $code, $previous);
+    }
+
+    /**
+     * Create an exception for an array that was expected to be a list.
      *
-     * @param array $array the array that failed the list expectation
+     * @param array<array-key, mixed> $array array that failed the list assertion
      *
-     * @return self an instance of InvalidArgumentException with a descriptive message
+     * @return self exception describing the invalid array shape
      */
     public static function forExpectedArrayList(array $array): self
     {
         return new self(\sprintf('Array must be a list, %s given', json_encode($array)));
+    }
+
+    /**
+     * Create an exception for a subscriber class that does not implement the required contract.
+     *
+     * @param string $eventSubscriber subscriber class name
+     * @param string $expectedInterface required subscriber interface
+     *
+     * @return self exception describing the invalid subscriber class
+     */
+    public static function forInvalidEventSubscriber(string $eventSubscriber, string $expectedInterface): self
+    {
+        return new self(\sprintf(
+            'Event subscriber "%s" must implement "%s"',
+            $eventSubscriber,
+            $expectedInterface,
+        ));
     }
 }

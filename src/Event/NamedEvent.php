@@ -8,60 +8,47 @@ declare(strict_types=1);
  * This source file is subject to the license bundled
  * with this source code in the file LICENSE.
  *
- * @link      https://github.com/php-fast-forward/event-dispatcher
- * @copyright Copyright (c) 2025 Felipe Sayão Lobato Abreu <github@mentordosnerds.com>
+ * @copyright Copyright (c) 2025-2026 Felipe Sayão Lobato Abreu <github@mentordosnerds.com>
  * @license   https://opensource.org/licenses/MIT MIT License
+ *
+ * @see       https://github.com/php-fast-forward/event-dispatcher
+ * @see       https://github.com/php-fast-forward
+ * @see       https://datatracker.ietf.org/doc/html/rfc2119
  */
 
 namespace FastForward\EventDispatcher\Event;
 
-use Symfony\Contracts\EventDispatcher\Event;
+use Psr\EventDispatcher\StoppableEventInterface;
 
 /**
- * Class NamedEvent.
+ * Wrap an event object with an explicit dispatch name.
  *
- * This class decorates a domain event by associating it with an explicit string name.
- * It SHALL be used in cases where events must be dispatched or identified by a specific
- * name in addition to their object type.
- *
- * NamedEvent enables event listeners to react not only to the class of an event but
- * also to a string-based identifier, providing more flexible routing and handling
- * strategies in event-driven architectures.
- *
- * @package FastForward\EventDispatcher\Event
+ * The name defaults to the wrapped event class when no explicit identifier is provided.
  */
-final class NamedEvent extends Event
+final readonly class NamedEvent implements StoppableEventInterface
 {
     /**
-     * @var string The name explicitly associated with the event.
-     *             This property MUST represent the identifier under which the event is dispatched.
+     * Dispatch name associated with the wrapped event.
      */
     private string $name;
 
     /**
-     * @var object The original domain event instance being wrapped.
-     *             This event MUST NOT be null and SHOULD be treated as immutable if possible.
-     */
-    private object $event;
-
-    /**
-     * Constructs a NamedEvent instance.
+     * Create a named wrapper for the provided event.
      *
-     * This constructor MUST be provided with both a string name and the original event object.
-     *
-     * @param object      $event the original event instance being wrapped
-     * @param null|string $name  the explicit name to associate with the event
+     * @param object $event original event instance
+     * @param string|null $name Explicit dispatch name. Defaults to the wrapped event class name.
      */
-    public function __construct(object $event, ?string $name = null)
-    {
-        $this->event = $event;
-        $this->name  = $name ?? \get_class($event);
+    public function __construct(
+        private object $event,
+        ?string $name = null
+    ) {
+        $this->name = $name ?? $this->event::class;
     }
 
     /**
-     * Retrieves the explicit name of the wrapped event.
+     * Get the dispatch name for the wrapped event.
      *
-     * @return string the name assigned to the event
+     * @return string event name used for listener lookup
      */
     public function getName(): string
     {
@@ -69,12 +56,23 @@ final class NamedEvent extends Event
     }
 
     /**
-     * Retrieves the original domain event instance.
+     * Get the original event instance.
      *
-     * @return object the original event object wrapped by this instance
+     * @return object wrapped event instance
      */
     public function getEvent(): object
     {
         return $this->event;
+    }
+
+    /**
+     * Determine whether propagation has been stopped for the wrapped event.
+     *
+     * @return bool whether the wrapped event stops propagation
+     */
+    public function isPropagationStopped(): bool
+    {
+        return $this->event instanceof StoppableEventInterface
+            && $this->event->isPropagationStopped();
     }
 }

@@ -8,14 +8,20 @@ declare(strict_types=1);
  * This source file is subject to the license bundled
  * with this source code in the file LICENSE.
  *
- * @link      https://github.com/php-fast-forward/event-dispatcher
- * @copyright Copyright (c) 2025 Felipe Sayão Lobato Abreu <github@mentordosnerds.com>
+ * @copyright Copyright (c) 2025-2026 Felipe Sayão Lobato Abreu <github@mentordosnerds.com>
  * @license   https://opensource.org/licenses/MIT MIT License
+ *
+ * @see       https://github.com/php-fast-forward/event-dispatcher
+ * @see       https://github.com/php-fast-forward
+ * @see       https://datatracker.ietf.org/doc/html/rfc2119
  */
 
 namespace FastForward\EventDispatcher\Tests\ListenerProvider;
 
+use stdClass;
+use ArrayObject;
 use FastForward\EventDispatcher\Event\NamedEvent;
+use FastForward\EventDispatcher\Exception\InvalidArgumentException;
 use FastForward\EventDispatcher\ListenerProvider\EventSubscriberListenerProvider;
 use PHPUnit\Framework\Attributes\CoversClass;
 use PHPUnit\Framework\Attributes\UsesClass;
@@ -27,44 +33,65 @@ use Symfony\Component\EventDispatcher\EventSubscriberInterface;
  */
 #[CoversClass(EventSubscriberListenerProvider::class)]
 #[UsesClass(NamedEvent::class)]
+#[UsesClass(InvalidArgumentException::class)]
 final class EventSubscriberListenerProviderTest extends TestCase
 {
+    /**
+     * @return void
+     */
     public function testGetListenersForEventWithoutSubscribersWillReturnEmptyIterator(): void
     {
-        $event    = new \stdClass();
+        $event    = new stdClass();
         $provider = new EventSubscriberListenerProvider();
 
         self::assertCount(0, iterator_to_array($provider->getListenersForEvent($event)));
     }
 
+    /**
+     * @return void
+     */
     public function testGetListenersForEventWillYieldListenersInPriorityOrder(): void
     {
-        $event = new \stdClass();
+        $event = new stdClass();
 
         $subscriber = new class implements EventSubscriberInterface {
             public static array $called = [];
 
+            /**
+             * @return array
+             */
             public static function getSubscribedEvents(): array
             {
                 return [
-                    \stdClass::class => [
-                        ['onEventA', 10],
-                        ['onEventB', 20],
-                        ['onEventC', 5],
-                    ],
+                    stdClass::class => [['onEventA', 10], ['onEventB', 20], ['onEventC', 5]],
                 ];
             }
 
+            /**
+             * @param mixed $e
+             *
+             * @return void
+             */
             public function onEventA($e): void
             {
                 self::$called[] = 'A';
             }
 
+            /**
+             * @param mixed $e
+             *
+             * @return void
+             */
             public function onEventB($e): void
             {
                 self::$called[] = 'B';
             }
 
+            /**
+             * @param mixed $e
+             *
+             * @return void
+             */
             public function onEventC($e): void
             {
                 self::$called[] = 'C';
@@ -83,37 +110,66 @@ final class EventSubscriberListenerProviderTest extends TestCase
         self::assertSame(['B', 'A', 'C'], $subscriber::$called);
     }
 
+    /**
+     * @return void
+     */
     public function testGetListenersForEventWillYieldListenersInSubscribersPriorityOrder(): void
     {
-        $event = new \stdClass();
-        $calls = new \ArrayObject();
+        $event = new stdClass();
+        $calls = new ArrayObject();
 
-        $subscriber1 = new class($calls) implements EventSubscriberInterface {
-            public function __construct(private \ArrayObject $calls) {}
+        $subscriber1 = new readonly class ($calls) implements EventSubscriberInterface {
+            /**
+             * @param ArrayObject $calls
+             */
+            public function __construct(
+                private ArrayObject $calls
+            ) {}
 
+            /**
+             * @return array
+             */
             public static function getSubscribedEvents(): array
             {
                 return [
-                    \stdClass::class => ['onEventA', 10],
+                    stdClass::class => ['onEventA', 10],
                 ];
             }
 
+            /**
+             * @param mixed $e
+             *
+             * @return void
+             */
             public function onEventA($e): void
             {
                 $this->calls->append('A');
             }
         };
 
-        $subscriber2 = new class($calls) implements EventSubscriberInterface {
-            public function __construct(private \ArrayObject $calls) {}
+        $subscriber2 = new readonly class ($calls) implements EventSubscriberInterface {
+            /**
+             * @param ArrayObject $calls
+             */
+            public function __construct(
+                private ArrayObject $calls
+            ) {}
 
+            /**
+             * @return array
+             */
             public static function getSubscribedEvents(): array
             {
                 return [
-                    \stdClass::class => ['onEventB', 20],
+                    stdClass::class => ['onEventB', 20],
                 ];
             }
 
+            /**
+             * @param mixed $e
+             *
+             * @return void
+             */
             public function onEventB($e): void
             {
                 $this->calls->append('B');
@@ -130,18 +186,31 @@ final class EventSubscriberListenerProviderTest extends TestCase
         self::assertSame(['B', 'A'], $calls->getArrayCopy());
     }
 
+    /**
+     * @return void
+     */
     public function testGetListenersForNamedEventResolvesByName(): void
     {
-        $event = new \stdClass();
+        $event = new stdClass();
 
         $subscriber = new class implements EventSubscriberInterface {
             public static bool $called = false;
 
+            /**
+             * @return array
+             */
             public static function getSubscribedEvents(): array
             {
-                return ['custom.event' => 'handle'];
+                return [
+                    'custom.event' => 'handle',
+                ];
             }
 
+            /**
+             * @param mixed $e
+             *
+             * @return void
+             */
             public function handle($e): void
             {
                 self::$called = true;
@@ -161,26 +230,44 @@ final class EventSubscriberListenerProviderTest extends TestCase
         self::assertTrue($subscriber::$called);
     }
 
+    /**
+     * @return void
+     */
     public function testSubscribeThrowsIfStringClassIsInvalid(): void
     {
-        $this->expectException(\InvalidArgumentException::class);
-        $this->expectExceptionMessage('Event subscriber "stdClass" must implement "Symfony\Component\EventDispatcher\EventSubscriberInterface"');
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage(
+            'Event subscriber "stdClass" must implement "Symfony\Component\EventDispatcher\EventSubscriberInterface"'
+        );
 
         new EventSubscriberListenerProvider('stdClass');
     }
 
+    /**
+     * @return void
+     */
     public function testSubscriberCanUseSingleMethodStringSyntax(): void
     {
-        $event = new \stdClass();
+        $event = new stdClass();
 
         $subscriber = new class implements EventSubscriberInterface {
             public static bool $called = false;
 
+            /**
+             * @return array
+             */
             public static function getSubscribedEvents(): array
             {
-                return [\stdClass::class => 'onEvent'];
+                return [
+                    stdClass::class => 'onEvent',
+                ];
             }
 
+            /**
+             * @param mixed $e
+             *
+             * @return void
+             */
             public function onEvent($e): void
             {
                 self::$called = true;

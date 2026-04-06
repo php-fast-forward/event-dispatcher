@@ -8,69 +8,60 @@ declare(strict_types=1);
  * This source file is subject to the license bundled
  * with this source code in the file LICENSE.
  *
- * @link      https://github.com/php-fast-forward/event-dispatcher
- * @copyright Copyright (c) 2025 Felipe Sayão Lobato Abreu <github@mentordosnerds.com>
+ * @copyright Copyright (c) 2025-2026 Felipe Sayão Lobato Abreu <github@mentordosnerds.com>
  * @license   https://opensource.org/licenses/MIT MIT License
+ *
+ * @see       https://github.com/php-fast-forward/event-dispatcher
+ * @see       https://github.com/php-fast-forward
+ * @see       https://datatracker.ietf.org/doc/html/rfc2119
  */
 
 namespace FastForward\EventDispatcher\ListenerProvider;
 
+use SplPriorityQueue;
 use FastForward\EventDispatcher\Event\NamedEvent;
+use FastForward\EventDispatcher\Exception\InvalidArgumentException;
 use Psr\EventDispatcher\ListenerProviderInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 
 /**
- * Class EventSubscriberListenerProvider.
+ * Adapt Symfony event subscribers to a PSR-14 listener provider.
  *
- * Provides event listeners by interpreting Symfony-style EventSubscriberInterface implementations.
- *
- * This class MUST be used when event subscribers are registered that implement the
- * getSubscribedEvents() method. It SHALL resolve listeners dynamically for each event
- * dispatched, including support for NamedEvent wrappers.
- *
- * Priority is handled using a SplPriorityQueue. Listeners with higher priority values
- * are returned earlier in the iterable.
- *
- * This class supports both individual and multiple listener declarations for each event name.
- *
- * @package FastForward\EventDispatcher\ListenerProvider
+ * Subscribers are indexed by event name and yielded in descending priority order.
  */
 final class EventSubscriberListenerProvider implements ListenerProviderInterface
 {
     /**
-     * @var array<string, \SplPriorityQueue> Stores event names mapped to a priority queue of listeners.
-     *                                       Keys MUST be event class names or string identifiers.
+     * Registered subscribers indexed by event name.
+     *
+     * @var array<string, SplPriorityQueue>
      */
     private array $subscribedEvents = [];
 
     /**
-     * Constructs the listener provider with one or more event subscribers.
+     * Register the initial event subscribers.
      *
-     * @param EventSubscriberInterface|string ...$eventSubscribers One or more event subscriber instances.
+     * @param EventSubscriberInterface|string ...$eventSubscribers Subscriber instances or subscriber class names.
      */
-    public function __construct(
-        EventSubscriberInterface|string ...$eventSubscribers,
-    ) {
+    public function __construct(EventSubscriberInterface|string ...$eventSubscribers)
+    {
         foreach ($eventSubscribers as $eventSubscriber) {
-            $this->subscribe($eventSubscriber);
+            $this->addSubscriber($eventSubscriber);
         }
     }
 
     /**
-     * Returns an iterable of listeners for the given event.
+     * Yield listeners for the provided event.
      *
-     * If the event is a NamedEvent, the name is extracted and used for lookup.
-     * Otherwise, the class name of the event is used.
+     * @param object $event event instance used for listener lookup
      *
-     * @param object $event the event instance for which to retrieve listeners
-     *
-     * @return iterable<callable> a list of listeners for the event
+     * @return iterable<callable(object): void> listeners that accept the resolved event instance
      */
     public function getListenersForEvent(object $event): iterable
     {
-        $eventName = $event instanceof NamedEvent ? $event->getName() : \get_class($event);
+        $eventName = $event instanceof NamedEvent ? $event->getName() : $event::class;
 
-        if (!isset($this->subscribedEvents[$eventName])) {
+        if (! isset($this->subscribedEvents[$eventName])) {
             return [];
         }
 
@@ -82,39 +73,32 @@ final class EventSubscriberListenerProvider implements ListenerProviderInterface
     }
 
     /**
-     * Registers an event subscriber and its declared listeners.
+     * Register a subscriber and index its declared listeners.
      *
-     * This method SHALL interpret the structure returned by getSubscribedEvents().
-     * It supports:
-     * - Single method name as string
-     * - Array with method and priority
-     * - Array of multiple method-priority pairs
+     * @param EventSubscriberInterface|string $eventSubscriber subscriber instance or subscriber class name
      *
-     * @param EventSubscriberInterface|string $eventSubscriber the subscriber instance or class name
-     *
-     * @throws \InvalidArgumentException if a string is provided that does not implement the required interface
+     * @throws InvalidArgumentException thrown when the provided class name is not a Symfony event subscriber
      */
-    private function subscribe(EventSubscriberInterface|string $eventSubscriber): void
+    public function addSubscriber(EventSubscriberInterface|string $eventSubscriber): void
     {
-        if (\is_string($eventSubscriber) && !is_subclass_of($eventSubscriber, EventSubscriberInterface::class)) {
-            throw new \InvalidArgumentException(\sprintf(
-                'Event subscriber "%s" must implement "%s"',
+        if (\is_string($eventSubscriber) && ! is_subclass_of($eventSubscriber, EventSubscriberInterface::class)) {
+            throw InvalidArgumentException::forInvalidEventSubscriber(
                 $eventSubscriber,
                 EventSubscriberInterface::class,
-            ));
+            );
         }
 
         $subscribedEvents = \call_user_func([$eventSubscriber, 'getSubscribedEvents']);
 
         foreach ($subscribedEvents as $eventName => $method) {
             if (\is_string($method)) {
-                $this->listen($eventSubscriber, $eventName, $method);
+                $this->addListener($eventSubscriber, $eventName, $method);
 
                 continue;
             }
 
             if (\is_array($method) && isset($method[0]) && \is_string($method[0])) {
-                $this->listen($eventSubscriber, $eventName, $method[0], $method[1] ?? 0);
+                $this->addListener($eventSubscriber, $eventName, $method[0], $method[1] ?? 0);
 
                 continue;
             }
@@ -122,7 +106,7 @@ final class EventSubscriberListenerProvider implements ListenerProviderInterface
             if (\is_array($method) && \is_array($method[0])) {
                 foreach ($method as $item) {
                     if (\is_array($item) && isset($item[0]) && \is_string($item[0])) {
-                        $this->listen($eventSubscriber, $eventName, $item[0], $item[1] ?? 0);
+                        $this->addListener($eventSubscriber, $eventName, $item[0], $item[1] ?? 0);
                     }
                 }
             }
@@ -130,22 +114,20 @@ final class EventSubscriberListenerProvider implements ListenerProviderInterface
     }
 
     /**
-     * Attaches a specific method of an event subscriber to a named event.
+     * Attach one subscriber method to the given event name.
      *
-     * Listeners are stored in a priority queue, and higher priority values are returned earlier.
-     *
-     * @param EventSubscriberInterface $eventSubscriber the subscriber instance
-     * @param string                   $eventName       the name or class of the event to listen for
-     * @param string                   $method          the method on the subscriber to call
-     * @param int                      $priority        Optional listener priority. Higher numbers are executed earlier.
+     * @param EventSubscriberInterface $eventSubscriber subscriber instance
+     * @param string $eventName event class name or string identifier
+     * @param string $method subscriber method to invoke
+     * @param int $priority Listener priority. Higher values are yielded first.
      */
-    private function listen(
+    private function addListener(
         EventSubscriberInterface $eventSubscriber,
         string $eventName,
         string $method,
         int $priority = 0,
     ): void {
-        $this->subscribedEvents[$eventName] ??= new \SplPriorityQueue();
+        $this->subscribedEvents[$eventName] ??= new SplPriorityQueue();
         $this->subscribedEvents[$eventName]->insert([$eventSubscriber, $method], $priority);
     }
 }

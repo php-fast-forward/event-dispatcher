@@ -8,19 +8,23 @@ declare(strict_types=1);
  * This source file is subject to the license bundled
  * with this source code in the file LICENSE.
  *
- * @link      https://github.com/php-fast-forward/event-dispatcher
- * @copyright Copyright (c) 2025 Felipe Sayão Lobato Abreu <github@mentordosnerds.com>
+ * @copyright Copyright (c) 2025-2026 Felipe Sayão Lobato Abreu <github@mentordosnerds.com>
  * @license   https://opensource.org/licenses/MIT MIT License
+ *
+ * @see       https://github.com/php-fast-forward/event-dispatcher
+ * @see       https://github.com/php-fast-forward
+ * @see       https://datatracker.ietf.org/doc/html/rfc2119
  */
 
 namespace FastForward\EventDispatcher\Tests;
 
+use stdClass;
+use RuntimeException;
 use FastForward\EventDispatcher\Event\NamedEvent;
 use FastForward\EventDispatcher\EventDispatcher;
-use FastForward\Iterator\ChainIterableIterator;
-use FastForward\Iterator\UniqueIteratorIterator;
-use Phly\EventDispatcher\ErrorEvent;
+use FastForward\EventDispatcher\Event\ErrorEvent;
 use PHPUnit\Framework\Attributes\CoversClass;
+use PHPUnit\Framework\Attributes\Test;
 use PHPUnit\Framework\Attributes\UsesClass;
 use PHPUnit\Framework\TestCase;
 use Prophecy\Argument;
@@ -29,12 +33,7 @@ use Prophecy\Prophecy\ObjectProphecy;
 use Psr\EventDispatcher\ListenerProviderInterface;
 use Psr\EventDispatcher\StoppableEventInterface;
 
-/**
- * @internal
- */
 #[CoversClass(EventDispatcher::class)]
-#[UsesClass(UniqueIteratorIterator::class)]
-#[UsesClass(ChainIterableIterator::class)]
 #[UsesClass(NamedEvent::class)]
 #[UsesClass(ErrorEvent::class)]
 final class EventDispatcherTest extends TestCase
@@ -45,6 +44,9 @@ final class EventDispatcherTest extends TestCase
 
     private EventDispatcher $dispatcher;
 
+    /**
+     * @return void
+     */
     protected function setUp(): void
     {
         $this->listenerProvider = $this->prophesize(ListenerProviderInterface::class);
@@ -54,12 +56,26 @@ final class EventDispatcherTest extends TestCase
         $this->dispatcher = new EventDispatcher($this->listenerProvider->reveal());
     }
 
+    /**
+     * @return void
+     */
+    #[Test]
     public function testDispatchWillInvokeAllListeners(): void
     {
-        $event = new \stdClass();
+        $event = new class {
+            public array $calls = [];
+        };
+        $namedEvent = null;
 
-        $listener1 = static fn (object $event) => $event->invoked1 = true;
-        $listener2 = static fn (object $event) => $event->invoked2 = true;
+        $listener1 = static function (object $dispatchedEvent) use ($event): void {
+            $event->calls[] = $dispatchedEvent::class;
+        };
+
+        $listener2 = static function (NamedEvent $dispatchedEvent) use (&$namedEvent): void {
+            $namedEvent = $dispatchedEvent;
+            $dispatchedEvent->getEvent()
+                ->calls[] = 'named';
+        };
 
         $this->listenerProvider
             ->getListenersForEvent($event)
@@ -76,20 +92,30 @@ final class EventDispatcherTest extends TestCase
         $result = $this->dispatcher->dispatch($event);
 
         self::assertSame($event, $result);
-        self::assertTrue($event->invoked1);
-        self::assertTrue($event->invoked2);
+        self::assertSame([$event::class, 'named'], $event->calls);
+        self::assertInstanceOf(NamedEvent::class, $namedEvent);
+        self::assertSame($event, $namedEvent->getEvent());
     }
 
-    public function testDispatchWillNotHandleDuplicatedListeners(): void
+    /**
+     * @return void
+     */
+    #[Test]
+    public function testDispatchWillInvokeTheSameListenerForOriginalAndNamedDispatches(): void
     {
-        $event           = new \stdClass();
-        $event->invoked1 = 0;
-        $event->invoked2 = 0;
+        $event = new class {
+            public array $calls = [];
+        };
 
         $eventName = uniqid();
 
-        $listener1 = static fn (object $event) => ++$event->invoked1;
-        $listener2 = static fn (object $event) => ++$event->invoked2;
+        $listener1 = static function (object $dispatchedEvent) use ($event): void {
+            $event->calls[] = $dispatchedEvent::class;
+        };
+
+        $listener2 = static function (object $dispatchedEvent) use ($event): void {
+            $event->calls[] = 'secondary:' . $dispatchedEvent::class;
+        };
 
         $this->listenerProvider
             ->getListenersForEvent($event)
@@ -106,25 +132,31 @@ final class EventDispatcherTest extends TestCase
         $result = $this->dispatcher->dispatch($event, $eventName);
 
         self::assertSame($event, $result);
-        self::assertSame(1, $event->invoked1);
-        self::assertSame(1, $event->invoked2);
+        self::assertSame([$event::class, 'secondary:' . $event::class, NamedEvent::class], $event->calls);
     }
 
+    /**
+     * @return void
+     */
+    #[Test]
     public function testDispatchWillReturnImmediatelyIfPropagationIsStopped(): void
     {
         $event = $this->prophesize(StoppableEventInterface::class);
-        $event->isPropagationStopped()->willReturn(true);
+        $event->isPropagationStopped()
+            ->willReturn(true);
 
-        self::assertSame(
-            $event->reveal(),
-            $this->dispatcher->dispatch($event->reveal())
-        );
+        self::assertSame($event->reveal(), $this->dispatcher->dispatch($event->reveal()));
     }
 
+    /**
+     * @return void
+     */
+    #[Test]
     public function testDispatchWillStopWhenEventPropagationIsStopped(): void
     {
         $event = $this->prophesize(StoppableEventInterface::class);
-        $event->isPropagationStopped()->willReturn(false, true);
+        $event->isPropagationStopped()
+            ->willReturn(false, true);
 
         $called   = false;
         $listener = static function ($e) use (&$called): void {
@@ -142,11 +174,45 @@ final class EventDispatcherTest extends TestCase
         self::assertTrue($called);
     }
 
+    /**
+     * @return void
+     */
+    #[Test]
+    public function testDispatchWillBreakBeforeInvokingRemainingListenersWhenPropagationStopsMidIteration(): void
+    {
+        $event = $this->prophesize(StoppableEventInterface::class);
+        $event->isPropagationStopped()
+            ->willReturn(false, true, true);
+
+        $calls = [];
+
+        $listener1 = static function () use (&$calls): void {
+            $calls[] = 'first';
+        };
+        $listener2 = static function () use (&$calls): void {
+            $calls[] = 'second';
+        };
+
+        $this->listenerProvider
+            ->getListenersForEvent($event->reveal())
+            ->willReturn([$listener1, $listener2])
+            ->shouldBeCalled()
+        ;
+
+        $this->dispatcher->dispatch($event->reveal());
+
+        self::assertSame(['first'], $calls);
+    }
+
+    /**
+     * @return void
+     */
+    #[Test]
     public function testDispatchWillDispatchErrorEventOnThrowable(): void
     {
-        $event     = new \stdClass();
-        $exception = new \RuntimeException('Listener error');
-        $listener  = static function () use ($exception): void {
+        $event     = new stdClass();
+        $exception = new RuntimeException('Listener error');
+        $listener  = static function () use ($exception): never {
             throw $exception;
         };
 
@@ -156,18 +222,28 @@ final class EventDispatcherTest extends TestCase
             ->shouldBeCalled()
         ;
 
-        $this->expectException(\RuntimeException::class);
+        $this->listenerProvider
+            ->getListenersForEvent(Argument::type(ErrorEvent::class))
+            ->willReturn([])
+            ->shouldBeCalled()
+        ;
+
+        $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('Listener error');
 
         $this->dispatcher->dispatch($event);
     }
 
+    /**
+     * @return void
+     */
+    #[Test]
     public function testDispatchWithErrorEventWillRethrowOriginalThrowable(): void
     {
-        $original   = new \RuntimeException('Original');
-        $errorEvent = new ErrorEvent(new \stdClass(), static fn () => null, $original);
+        $original   = new RuntimeException('Original');
+        $errorEvent = new ErrorEvent(new stdClass(), static fn(): null => null, $original);
 
-        $listener = static function () use ($errorEvent): void {
+        $listener = static function () use ($errorEvent): never {
             throw $errorEvent;
         };
 
@@ -177,9 +253,27 @@ final class EventDispatcherTest extends TestCase
             ->shouldBeCalled()
         ;
 
-        $this->expectException(\RuntimeException::class);
+        $this->expectException(RuntimeException::class);
         $this->expectExceptionMessage('Original');
 
         $this->dispatcher->dispatch($errorEvent);
+    }
+
+    /**
+     * @return void
+     */
+    #[Test]
+    public function testDispatchOfNamedEventWillReturnTheWrappedEvent(): void
+    {
+        $event      = new stdClass();
+        $namedEvent = new NamedEvent($event, 'custom.event');
+
+        $this->listenerProvider
+            ->getListenersForEvent($namedEvent)
+            ->willReturn([])
+            ->shouldBeCalled()
+        ;
+
+        self::assertSame($event, $this->dispatcher->dispatch($namedEvent));
     }
 }
