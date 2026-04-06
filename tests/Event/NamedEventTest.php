@@ -69,7 +69,7 @@ final class NamedEventTest extends TestCase
     #[Test]
     public function testIsPropagationStoppedWillReturnFalseForNonStoppableWrappedEvent(): void
     {
-        self::assertFalse(new NamedEvent(new stdClass())->isPropagationStopped());
+        self::assertFalse((new NamedEvent(new stdClass()))->isPropagationStopped());
     }
 
     /**
