@@ -1,13 +1,16 @@
 # Fast Forward Event Dispatcher
 
+[![PHP Version](https://img.shields.io/badge/php-^8.3-777BB4?logo=php&logoColor=white)](https://www.php.net/releases/)
+[![Composer Package](https://img.shields.io/badge/composer-fast--forward%2Fevent--dispatcher-F28D1A.svg?logo=composer&logoColor=white)](https://packagist.org/packages/fast-forward/event-dispatcher)
+[![PSR-14](https://img.shields.io/badge/PSR--14-event--dispatcher-777BB4?logo=php&logoColor=white)](https://www.php-fig.org/psr/psr-14/)
+[![Tests](https://img.shields.io/github/actions/workflow/status/php-fast-forward/event-dispatcher/tests.yml?logo=githubactions&logoColor=white&label=tests&color=22C55E)](https://github.com/php-fast-forward/event-dispatcher/actions/workflows/tests.yml)
+[![Coverage](https://img.shields.io/badge/coverage-phpunit-4ADE80?logo=php&logoColor=white)](https://php-fast-forward.github.io/event-dispatcher/coverage/index.html)
+[![Docs](https://img.shields.io/github/deployments/php-fast-forward/event-dispatcher/github-pages?logo=readthedocs&logoColor=white&label=docs&labelColor=1E293B&color=38BDF8&style=flat)](https://php-fast-forward.github.io/event-dispatcher/index.html)
+[![License](https://img.shields.io/github/license/php-fast-forward/event-dispatcher?color=64748B)](LICENSE)
+[![GitHub Sponsors](https://img.shields.io/github/sponsors/php-fast-forward?logo=githubsponsors&logoColor=white&color=EC4899)](https://github.com/sponsors/php-fast-forward)
+
 A lightweight PSR-14 event dispatcher for PHP 8.3+ with named events, Symfony-style subscribers,
 attribute-based listeners, and first-class integration with the Fast Forward container.
-
-[![PHP 8.3+](https://img.shields.io/badge/php-8.3%2B-777BB4.svg?logo=php&logoColor=white)](https://www.php.net/releases/)
-[![PSR-14](https://img.shields.io/badge/PSR-14-event%20dispatcher-0A7EA4.svg)](https://www.php-fig.org/psr/psr-14/)
-[![License: MIT](https://img.shields.io/badge/license-MIT-22C55E.svg)](https://opensource.org/licenses/MIT)
-[![Tests](https://github.com/php-fast-forward/event-dispatcher/actions/workflows/tests.yml/badge.svg)](https://github.com/php-fast-forward/event-dispatcher/actions/workflows/tests.yml)
-[![Composer Package](https://img.shields.io/badge/composer-fast--forward%2Fevent--dispatcher-F28D1A.svg?logo=composer&logoColor=white)](https://packagist.org/packages/fast-forward/event-dispatcher)
 
 ## ✨ Features
 
