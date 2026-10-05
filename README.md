@@ -1,7 +1,7 @@
 # Fast Forward Event Dispatcher
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/php-fast-forward/event-dispatcher/a7cfcba5dc1b3a58db4d38a9ba6735d05ed9f7b0/docs/_static/mascot-banner.png" alt="Dash routing an event to prioritized listener terminals" width="840">
+  <img src="docs/_static/mascot-banner.png" alt="Dash routing an event to prioritized listener terminals" width="840">
 </p>
 
 [![PHP Version](https://img.shields.io/badge/php-^8.3-777BB4?logo=php&logoColor=white)](https://www.php.net/releases/)
