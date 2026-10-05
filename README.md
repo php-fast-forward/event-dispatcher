@@ -1,5 +1,9 @@
 # Fast Forward Event Dispatcher
 
+<p align="center">
+  <img src="assets/brand/dash.png" alt="Dash, the PHP Fast Forward fox, wearing a purple hoodie" width="320">
+</p>
+
 [![PHP Version](https://img.shields.io/badge/php-^8.3-777BB4?logo=php&logoColor=white)](https://www.php.net/releases/)
 [![Composer Package](https://img.shields.io/badge/composer-fast--forward%2Fevent--dispatcher-F28D1A.svg?logo=composer&logoColor=white)](https://packagist.org/packages/fast-forward/event-dispatcher)
 [![PSR-14](https://img.shields.io/badge/PSR--14-event--dispatcher-777BB4?logo=php&logoColor=white)](https://www.php-fig.org/psr/psr-14/)
