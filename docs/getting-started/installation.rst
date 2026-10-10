@@ -23,6 +23,14 @@ Install With Composer
 
    composer require fast-forward/event-dispatcher
 
+Symfony subscribers and ``#[AsEventListener]`` attributes are optional. To use them, also install:
+
+.. code-block:: bash
+
+   composer require symfony/event-dispatcher
+
+The PSR-14 dispatcher and ordinary callable listeners do not require this component.
+
 What You Get After Installation
 -------------------------------
 
