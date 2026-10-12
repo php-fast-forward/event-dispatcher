@@ -24,22 +24,19 @@
         "php": "^8.3",
         "container-interop/service-provider": "^0.4.1",
         "fast-forward/container": "^1.6",
-        "fast-forward/defer": "^1.0",
-        "fast-forward/iterators": "^1.2",
         "phly/phly-event-dispatcher": "^1.5",
         "psr/container": "^2.0",
         "psr/event-dispatcher": "^1.0",
-        "psr/http-client": "^1.0",
-        "psr/http-factory": "^1.0",
-        "psr/http-message": "^2.0",
         "psr/log": "^3.0",
-        "psr/simple-cache": "^3.0",
         "symfony/event-dispatcher-contracts": "^3.0"
     },
     "require-dev": {
         "fast-forward/dev-tools": "dev-main",
         "symfony/cache": "^7.0",
         "symfony/event-dispatcher": "^7.4"
+    },
+    "suggest": {
+        "symfony/event-dispatcher": "Enables Symfony-style subscribers and AsEventListener attributes."
     },
     "minimum-stability": "stable",
     "autoload": {
