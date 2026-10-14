@@ -56,7 +56,6 @@
             "infection/extension-installer": true,
             "phpdocumentor/shim": true,
             "phpro/grumphp": true,
-            "phpro/grumphp-shim": true,
             "pyrech/composer-changelogs": true
         },
         "platform": {
