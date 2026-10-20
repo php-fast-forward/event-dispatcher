@@ -1,0 +1,43 @@
+name: Changelog
+
+on:
+  pull_request:
+    branches:
+      - main
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
+      - labeled
+      - unlabeled
+  pull_request_target:
+    branches:
+      - main
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
+      - labeled
+      - unlabeled
+      - closed
+  push:
+    branches:
+      - main
+  workflow_dispatch: null
+
+permissions: {}
+
+jobs:
+  changelog:
+    permissions:
+      contents: write # Manage the version branch, tag and GitHub Release.
+      pull-requests: write # Maintain PR feedback and the version PR.
+      issues: read # Read contribution labels.
+      statuses: write # Report the changelog check status.
+    uses: php-fast-forward/changelog/.github/workflows/changelog.yml@v0
+    with:
+      source: github
+      version-pr-title: 'chore(release): fast-forward/event-dispatcher v{current_version} → v{next_version}'
+      base-branch: main
