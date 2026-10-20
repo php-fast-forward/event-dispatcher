@@ -6,7 +6,13 @@
     "auto-sync": true,
     "vendor-sources": false,
     "dependencies": {
-        "composer": false
+        "composer": {
+            "trusted": [
+                "fast-forward/config",
+                "fast-forward/container"
+            ],
+            "trusted-replace": true
+        }
     },
     "sources": [
         {
@@ -15,14 +21,6 @@
             "ref": "^0.3.0",
             "skills": [
                 "fast-forward-changelog"
-            ]
-        },
-        {
-            "from": "github",
-            "package": "php-fast-forward/container",
-            "ref": "^1.10.0",
-            "skills": [
-                "fast-forward-container"
             ]
         }
     ]
