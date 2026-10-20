@@ -32,12 +32,12 @@ permissions: {}
 jobs:
   changelog:
     permissions:
-      contents: write
-      pull-requests: write
-      issues: read
-      statuses: write
+      contents: write # Manage the version branch, tag and GitHub Release.
+      pull-requests: write # Maintain PR feedback and the version PR.
+      issues: read # Read contribution labels.
+      statuses: write # Report the changelog check status.
     uses: php-fast-forward/changelog/.github/workflows/changelog.yml@85474de5a16bb08f83c9f30e0ed72f331a210f07 # v0.3.0
     with:
-      source: tags
-      version-pr-title: 'chore(release): event-dispatcher {current_version} → {next_version}'
+      source: github
+      version-pr-title: 'chore(release): fast-forward/event-dispatcher v{current_version} → v{next_version}'
       base-branch: main
