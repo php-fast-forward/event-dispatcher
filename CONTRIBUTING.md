@@ -17,10 +17,13 @@ with `check --since=origin/main --source=tags --no-interaction` using the same C
 The tag source permits this local validation without GitHub credentials; the
 workflow uses `source: github` to preserve published release notes.
 
-[The installed project skill](.agents/skills/fast-forward-changelog/SKILL.md)
-explains the contribution and release lifecycle. Check its integrity with
-`cpx --skip-local fast-forward/changelog skill:install --check --json`.
-The skill is a local instruction payload, independent of a Composer dependency.
+Run `composer install` to fetch the project skill into
+`.agents/skills/fast-forward-changelog`. The committed `skills.json` selects its
+GitHub source through `llm/skills`; generated `.agents` files stay out of Git.
+This does not install Changelog's runtime dependencies into the library.
+Inspect the copy with `composer skills:show` and refresh compatible versions with
+`composer skills:update --from=github`. Keep the skill under this manager's
+ownership; do not run the legacy Changelog skill installer on it.
 
 The GitHub workflow checks fragments, maintains PR feedback and prepares a
 version PR from stable ancestral tags and committed history. Review that PR's

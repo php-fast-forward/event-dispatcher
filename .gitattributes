@@ -10,3 +10,4 @@
 /.gitmodules        export-ignore
 /README*.md export-ignore
 /composer-dependency-analyser.php export-ignore
+/skills.json export-ignore
