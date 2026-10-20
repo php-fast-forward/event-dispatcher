@@ -543,3 +543,12 @@ When changing behavior, keep the examples and this README in sync with the code.
 - [PSR-3: Logger Interface](https://www.php-fig.org/psr/psr-3/)
 - [Symfony Event Subscribers](https://symfony.com/doc/current/event_dispatcher.html#creating-an-event-subscriber)
 - [Examples directory](examples)
+
+## Consumer agent skill
+
+The package includes [fast-forward-event-dispatcher](resources/skills/fast-forward-event-dispatcher/SKILL.md) for application integration.
+It supports `fast-forward/event-dispatcher:^1.1`; inspect the installed version.
+See [skill installation and lifecycle](resources/skills/fast-forward-event-dispatcher/references/installation.md) for
+optional project synchronization with `llm/skills ^1.15`, guarded manual
+project/global copies and a pinned Skills CLI alternative. Shipping files does
+not install tooling or activate the skill in an agent session.

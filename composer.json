@@ -37,7 +37,8 @@
         "symfony/event-dispatcher": "^7.4"
     },
     "suggest": {
-        "symfony/event-dispatcher": "Enables Symfony-style subscribers and AsEventListener attributes."
+        "symfony/event-dispatcher": "Enables Symfony-style subscribers and AsEventListener attributes.",
+        "llm/skills": "Optionally synchronize the bundled consumer skill in your project."
     },
     "minimum-stability": "stable",
     "autoload": {
@@ -71,6 +72,9 @@
         },
         "grumphp": {
             "config-default-path": "vendor/fast-forward/dev-tools/grumphp.yml"
+        },
+        "skills": {
+            "source": "resources/skills"
         }
     },
     "scripts": {
