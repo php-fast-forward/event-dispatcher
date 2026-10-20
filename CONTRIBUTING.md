@@ -28,10 +28,12 @@ version, history and fragment deletions before merging it. It never merges itsel
 its approved merge publishes the version tag and GitHub Release. Installing the
 workflow or merging an ordinary contribution does not publish a release.
 
-There is no committed `CHANGELOG.md` yet. The first version PR imports the
-existing GitHub Release text before adding the new notes. The sole historical
-release, `v1.0.0`, currently contains only its **Full Changelog** link; that text
+`CHANGELOG.md` was backfilled from the existing GitHub Release. The sole
+historical release, `v1.0.0`, contains only its **Full Changelog** link; that text
 is preserved rather than replaced with invented summaries or PR references.
+Version headings link to the corresponding published release through footer
+definitions. Historical maintenance preserves the original release text and
+does not consume pending fragments.
 New fragment origins are resolved to their qualifying pull requests during
 consolidation, without requiring a second edit after opening the contribution.
 Publication uses the approved version's notes for the matching GitHub Release.
