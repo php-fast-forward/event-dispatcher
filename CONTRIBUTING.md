@@ -43,12 +43,17 @@ Publication uses the approved version's notes for the matching GitHub Release.
 Version PR titles follow
 `chore(release): fast-forward/event-dispatcher v{current_version} → v{next_version}`.
 
-## Container consumer skill
+## Composer dependency skills
 
-The same development-only manager also restores `fast-forward-container` from
-`php-fast-forward/container` within `^1.10.0`, alongside the other configured
-skills. Inspect all sources with `composer skills:show` and refresh them with
-`composer skills:update --from=github`. Generated copies stay ignored; this
-configuration does not upgrade the runtime library. Check the installed
-Container version before following the skill: its API contract supports `^1.10`
-and requires reporting earlier versions instead of assuming compatibility.
+The development-only manager restores `fast-forward-container` and
+`fast-forward-config` from the installed Composer packages, including Config as
+a transitive dependency. `skills.json` explicitly trusts only those two Composer
+donors; dependency trust does not extend to other installed packages. No separate
+GitHub source or version pin is used for either library.
+
+Inspect donors with `composer skills:show` and refresh their payloads with
+`composer skills:update --from=composer`. The existing GitHub source continues
+to manage the Changelog contributor skill independently. Generated copies remain
+ignored. Synchronization does not upgrade runtime dependencies; an installed
+version without a bundled skill contributes no skill. Check installed versions
+and the bundled skill's supported contract before using its instructions.

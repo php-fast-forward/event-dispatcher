@@ -23,7 +23,7 @@
     "require": {
         "php": "^8.3",
         "container-interop/service-provider": "^0.4.1",
-        "fast-forward/container": "^1.6",
+        "fast-forward/container": "^1.10",
         "phly/phly-event-dispatcher": "^1.5",
         "psr/container": "^2.0",
         "psr/event-dispatcher": "^1.0",
