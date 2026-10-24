@@ -11,3 +11,4 @@
 /README*.md export-ignore
 /composer-dependency-analyser.php export-ignore
 /skills.json export-ignore
+/.php-cs-fixer.dist.php export-ignore

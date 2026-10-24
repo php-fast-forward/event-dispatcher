@@ -47,9 +47,15 @@ Version PR titles follow
 
 The development-only manager restores `fast-forward-container` and
 `fast-forward-config` from the installed Composer packages, including Config as
-a transitive dependency. `skills.json` explicitly trusts only those two Composer
-donors; dependency trust does not extend to other installed packages. No separate
-GitHub source or version pin is used for either library.
+a transitive dependency. `skills.json` trusts installed donors in the
+`fast-forward/*` namespace; `trusted-replace` keeps other namespaces untrusted.
+No separate GitHub source or version pin is used for either library.
+
+The bundled skill is also synchronized from the local `resources/skills`
+directory, without a package override. Changelog instructions come from the
+GitHub source at `^0.4.0`, discovered through its Composer metadata without a
+skill allowlist. `auto-sync: true` restores these skills after normal Composer
+install/update operations; `composer skills:update` refreshes them explicitly.
 
 Inspect donors with `composer skills:show` and refresh their payloads with
 `composer skills:update --from=composer`. The existing GitHub source continues
